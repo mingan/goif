@@ -123,6 +123,46 @@ func main() {
 		)
 	})
 
+	t.Run("multiple import blocks", func(t *testing.T) {
+		testFormatter(
+			t,
+			`
+package main
+
+import (
+	"log"
+	"fmt"
+)
+
+import (
+	"time"
+	"math"
+)
+
+func main() {
+	fmt.Println("Hello world")
+}
+`,
+			`
+package main
+
+import (
+	"fmt"
+	"log"
+)
+
+import (
+	"math"
+	"time"
+)
+
+func main() {
+	fmt.Println("Hello world")
+}
+`,
+		)
+	})
+
 	return
 
 	source, err := os.OpenFile("sample/sample.go", os.O_RDONLY, os.ModePerm)

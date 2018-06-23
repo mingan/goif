@@ -43,6 +43,7 @@ func (f *formatter) Line(line string, w io.Writer) {
 		if importClosingLine(line) {
 			f.writeOrderedImports(w)
 			f.importOpened = false
+			f.importLines = []importDecl{}
 		} else if len(strings.TrimSpace(line)) > 0 {
 			if id, err := parseImportLine(line); err == nil {
 				f.importLines = append(f.importLines, id)
