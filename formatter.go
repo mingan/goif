@@ -5,12 +5,15 @@ import (
 	"io"
 	"strings"
 	"bufio"
+	"regexp"
+	"bytes"
+	"errors"
 )
 
 type formatter struct {
 	orgGroupPrefix string
 	importOpened   bool
-	importLines    []string
+	importLines    []importDecl
 }
 
 func NewFormatter(orgGroupPrefix string) *formatter {
@@ -41,7 +44,9 @@ func (f *formatter) Line(line string, w io.Writer) {
 			f.writeOrderedImports(w)
 			f.importOpened = false
 		} else if len(strings.TrimSpace(line)) > 0 {
-			f.importLines = append(f.importLines, line)
+			if id, err := parseImportLine(line); err == nil {
+				f.importLines = append(f.importLines, id)
+			}
 		}
 	default:
 		w.Write([]byte(line))
@@ -63,7 +68,8 @@ func (f *formatter) writeOrderedImports(w io.Writer) {
 	count := len(groups)
 	for i, group := range groups {
 		for _, imp := range group {
-			w.Write([]byte(imp))
+			w.Write([]byte(imp.String()))
+			w.Write([]byte("\n"))
 		}
 		if i < count-1 {
 			w.Write([]byte("\n"))
@@ -72,13 +78,13 @@ func (f *formatter) writeOrderedImports(w io.Writer) {
 	w.Write([]byte(")\n"))
 }
 
-func groupAndSort(orgPrefix string, imports []string) [][]string {
-	var stdlib, org, others []string
+func groupAndSort(orgPrefix string, imports []importDecl) [][]importDecl {
+	var stdlib, org, others []importDecl
 
 	for _, imp := range imports {
-		if strings.Contains(imp, orgPrefix) {
+		if strings.Contains(imp.pckg, orgPrefix) {
 			org = append(org, imp)
-		} else if strings.Contains(imp, ".") {
+		} else if strings.Contains(imp.pckg, ".") {
 			others = append(others, imp)
 		} else {
 			stdlib = append(stdlib, imp)
@@ -89,7 +95,7 @@ func groupAndSort(orgPrefix string, imports []string) [][]string {
 	sort.Sort(sortableImports(stdlib))
 	sort.Sort(sortableImports(others))
 
-	var out [][]string
+	var out [][]importDecl
 	if len(stdlib) > 0 {
 		out = append(out, stdlib)
 	}
@@ -103,14 +109,46 @@ func groupAndSort(orgPrefix string, imports []string) [][]string {
 	return out
 }
 
-type sortableImports []string
+type importDecl struct {
+	pckg string
+	alias string
+}
+
+func parseImportLine(line string) (importDecl, error) {
+	r := regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
+	matches := r.FindStringSubmatch(line)
+	if len(matches) == 0 {
+		return importDecl{}, errors.New("unrecognized import line")
+	}
+	
+	return importDecl{
+		alias: matches[2],
+		pckg: matches[3],
+	}, nil
+}
+
+func (id importDecl) String() string {
+	buf := bytes.Buffer{}
+	buf.WriteString("\t")
+	if id.alias != "" {
+		buf.WriteString(id.alias)
+		buf.WriteString(" ")
+	}
+	buf.WriteString("\"")
+	buf.WriteString(id.pckg)
+	buf.WriteString("\"")
+	
+	return buf.String()
+}
+
+type sortableImports []importDecl
 
 func (imps sortableImports) Len() int {
 	return len(imps)
 }
 
 func (imps sortableImports) Less(i, j int) bool {
-	return imps[i] < imps[j]
+	return imps[i].pckg < imps[j].pckg
 }
 
 func (imps sortableImports) Swap(i, j int) {

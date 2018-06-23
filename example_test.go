@@ -100,7 +100,7 @@ func main() {
 package main
 
 import (
-	"log"
+	_ "log"
 	f "fmt"
 )
 
@@ -113,7 +113,7 @@ package main
 
 import (
 	f "fmt"
-	"log"
+	_ "log"
 )
 
 func main() {
