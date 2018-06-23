@@ -38,7 +38,7 @@ func (f *formatter) Line(line string, w io.Writer) {
 		f.importOpened = true
 	case f.importOpened:
 		if importClosingLine(line) {
-			writeOrderedImports(f.importLines, w)
+			f.writeOrderedImports(w)
 			f.importOpened = false
 		} else if len(strings.TrimSpace(line)) > 0 {
 			f.importLines = append(f.importLines, line)
@@ -56,9 +56,9 @@ func importClosingLine(line string) bool {
 	return strings.Contains(line, ")")
 }
 
-func writeOrderedImports(lines []string, w io.Writer) {
+func (f *formatter) writeOrderedImports(w io.Writer) {
 	w.Write([]byte("import (\n"))
-	groups := groupAndSort(lines)
+	groups := groupAndSort(f.orgGroupPrefix, f.importLines)
 
 	count := len(groups)
 	for i, group := range groups {
@@ -72,12 +72,12 @@ func writeOrderedImports(lines []string, w io.Writer) {
 	w.Write([]byte(")\n"))
 }
 
-func groupAndSort(imports []string) [][]string {
-	var stdlib, enectiva, others []string
+func groupAndSort(orgPrefix string, imports []string) [][]string {
+	var stdlib, org, others []string
 
 	for _, imp := range imports {
-		if strings.Contains(imp, "enectiva") {
-			enectiva = append(enectiva, imp)
+		if strings.Contains(imp, orgPrefix) {
+			org = append(org, imp)
 		} else if strings.Contains(imp, ".") {
 			others = append(others, imp)
 		} else {
@@ -85,7 +85,7 @@ func groupAndSort(imports []string) [][]string {
 		}
 	}
 
-	sort.Sort(sortableImports(enectiva))
+	sort.Sort(sortableImports(org))
 	sort.Sort(sortableImports(stdlib))
 	sort.Sort(sortableImports(others))
 
@@ -93,8 +93,8 @@ func groupAndSort(imports []string) [][]string {
 	if len(stdlib) > 0 {
 		out = append(out, stdlib)
 	}
-	if len(enectiva) > 0 {
-		out = append(out, enectiva)
+	if len(org) > 0 {
+		out = append(out, org)
 	}
 	if len(others) > 0 {
 		out = append(out, others)
