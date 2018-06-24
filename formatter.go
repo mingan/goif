@@ -23,44 +23,52 @@ func NewFormatter(orgGroupPrefix string) *formatter {
 	}
 }
 
-func (f *formatter) Format(r io.Reader, w io.Writer) {
+func (f *formatter) Format(r io.Reader, w io.Writer) error {
 	reader := bufio.NewReader(r)
 	for {
 		line, err := reader.ReadString('\n')
 		if err == nil || err == io.EOF {
-			f.Line(line, w)
+			if err := f.line(line, w); err != nil {
+				return err
+			}
 			if err == io.EOF {
 				break
 			}
 		}
 	}
+	f.flushUnclosedBlock()
+	return nil
 }
 
-func (f *formatter) Line(line string, w io.Writer) {
+func (f *formatter) line(line string, w io.Writer) error {
 	switch {
-	case !f.importOpened && importOpeningLine(line):
+	case !f.importOpened && isImportOpeningLine(line):
 		f.importOpened = true
 	case f.importOpened:
-		if importClosingLine(line) {
+		if isImportClosingLine(line) {
 			f.writeOrderedImports(w)
 			f.importOpened = false
 			f.importLines = []importLine{}
 		} else if len(strings.TrimSpace(line)) > 0 {
 			if id, err := parseImportLine(line); err == nil {
 				f.importLines = append(f.importLines, id)
+			} else {
+				return err
 			}
 		}
 	default:
 		w.Write([]byte(line))
 	}
+	
+	return nil
 }
 
-func importOpeningLine(line string) bool {
+func isImportOpeningLine(line string) bool {
 	return openingLineRegexp.MatchString(line)
 }
 
-func importClosingLine(line string) bool {
-	return strings.Contains(line, ")")
+func isImportClosingLine(line string) bool {
+	return closingLineRegexp.MatchString(line)
 }
 
 func (f *formatter) writeOrderedImports(w io.Writer) {
@@ -111,6 +119,12 @@ func groupAndSort(orgPrefix string, imports []importLine) [][]importLine {
 	return out
 }
 
+func (f *formatter) flushUnclosedBlock() {
+	if !f.importOpened {
+		return
+	}
+}
+
 type importLine struct {
 	importDecl importDecl
 	comment    comment
@@ -138,6 +152,7 @@ var (
 	importDeclRegexp = regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
 	commentRegexp    = regexp.MustCompile(`^\s*//(.+)`)
 	openingLineRegexp = regexp.MustCompile(`^\s*import \(`)
+	closingLineRegexp = regexp.MustCompile(`^\s*\)`)
 )
 
 func parseImportDecl(line string) (importLine, error) {

@@ -11,8 +11,6 @@ import (
 	"github.com/andreyvit/diff"
 )
 
-// unclosed block
-
 func TestFormatter(t *testing.T) {
 	t.Run("empty input", func(t *testing.T) {
 		testFormatter(t, "", "")
@@ -57,7 +55,7 @@ func main() {
 `,
 		)
 	})
-	
+
 	t.Run("only one group", func(t *testing.T) {
 		testFormatter(
 			t,
@@ -239,6 +237,27 @@ import (
 		)
 	})
 
+	t.Run("unclosed import block", func(t *testing.T) {
+
+		t.Parallel()
+
+		formatter := NewFormatter("enectiva.cz")
+
+		var output bytes.Buffer
+		err := formatter.Format(bytes.NewBufferString(`package main
+import (
+	"log"
+	"fmt"
+
+func main() {
+	fmt.Println("I won't compile")
+}
+`), &output)
+		if err == nil {
+			t.Error("Expected to fail")
+		}
+	})
+
 	return
 
 	source, err := os.OpenFile("sample/sample.go", os.O_RDONLY, os.ModePerm)
@@ -265,7 +284,7 @@ import (
 	for {
 		line, err := reader.ReadString('\n')
 		if err == nil || err == io.EOF {
-			p.Line(line, target)
+			p.line(line, target)
 			if err == io.EOF {
 				fmt.Println("done reading", line)
 				break
