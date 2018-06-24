@@ -56,7 +56,7 @@ func (f *formatter) Line(line string, w io.Writer) {
 }
 
 func importOpeningLine(line string) bool {
-	return strings.Contains(line, "import (")
+	return openingLineRegexp.MatchString(line)
 }
 
 func importClosingLine(line string) bool {
@@ -137,6 +137,7 @@ func parseImportLine(line string) (importLine, error) {
 var (
 	importDeclRegexp = regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
 	commentRegexp    = regexp.MustCompile(`^\s*//(.+)`)
+	openingLineRegexp = regexp.MustCompile(`^\s*import \(`)
 )
 
 func parseImportDecl(line string) (importLine, error) {

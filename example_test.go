@@ -11,9 +11,7 @@ import (
 	"github.com/andreyvit/diff"
 )
 
-// single line
 // unclosed block
-// commented out blocks
 
 func TestFormatter(t *testing.T) {
 	t.Run("empty input", func(t *testing.T) {
@@ -217,6 +215,26 @@ import (
 	"fmt"
 	"log"
 )
+`,
+		)
+	})
+
+	t.Run("commented out import block", func(t *testing.T) {
+		testFormatter(
+			t,
+			`package main
+
+// import (
+//	"log"
+//	"fmt"
+// )
+`,
+			`package main
+
+// import (
+//	"log"
+//	"fmt"
+// )
 `,
 		)
 	})
