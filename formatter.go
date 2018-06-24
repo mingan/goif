@@ -8,12 +8,13 @@ import (
 	"regexp"
 	"bytes"
 	"errors"
+	"fmt"
 )
 
 type formatter struct {
 	orgGroupPrefix string
 	importOpened   bool
-	importLines    []importDecl
+	importLines    []importLine
 }
 
 func NewFormatter(orgGroupPrefix string) *formatter {
@@ -43,7 +44,7 @@ func (f *formatter) Line(line string, w io.Writer) {
 		if importClosingLine(line) {
 			f.writeOrderedImports(w)
 			f.importOpened = false
-			f.importLines = []importDecl{}
+			f.importLines = []importLine{}
 		} else if len(strings.TrimSpace(line)) > 0 {
 			if id, err := parseImportLine(line); err == nil {
 				f.importLines = append(f.importLines, id)
@@ -79,13 +80,13 @@ func (f *formatter) writeOrderedImports(w io.Writer) {
 	w.Write([]byte(")\n"))
 }
 
-func groupAndSort(orgPrefix string, imports []importDecl) [][]importDecl {
-	var stdlib, org, others []importDecl
+func groupAndSort(orgPrefix string, imports []importLine) [][]importLine {
+	var stdlib, org, others []importLine
 
 	for _, imp := range imports {
-		if strings.Contains(imp.pckg, orgPrefix) {
+		if strings.Contains(imp.importDecl.pckg, orgPrefix) {
 			org = append(org, imp)
-		} else if strings.Contains(imp.pckg, ".") {
+		} else if strings.Contains(imp.importDecl.pckg, ".") {
 			others = append(others, imp)
 		} else {
 			stdlib = append(stdlib, imp)
@@ -96,7 +97,7 @@ func groupAndSort(orgPrefix string, imports []importDecl) [][]importDecl {
 	sort.Sort(sortableImports(stdlib))
 	sort.Sort(sortableImports(others))
 
-	var out [][]importDecl
+	var out [][]importLine
 	if len(stdlib) > 0 {
 		out = append(out, stdlib)
 	}
@@ -110,46 +111,85 @@ func groupAndSort(orgPrefix string, imports []importDecl) [][]importDecl {
 	return out
 }
 
+type importLine struct {
+	importDecl importDecl
+	comment    comment
+}
+
 type importDecl struct {
-	pckg string
+	pckg  string
 	alias string
 }
 
-func parseImportLine(line string) (importDecl, error) {
-	r := regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
-	matches := r.FindStringSubmatch(line)
-	if len(matches) == 0 {
-		return importDecl{}, errors.New("unrecognized import line")
+func (id importDecl) empty() bool {
+	return id.pckg == "" && id.alias == ""
+}
+
+type comment string
+
+func parseImportLine(line string) (importLine, error) {
+	if l, err := parseImportDecl(line); err == nil {
+		return l, nil
 	}
-	
-	return importDecl{
-		alias: matches[2],
-		pckg: matches[3],
+	return parseComment(line)
+}
+
+var (
+	importDeclRegexp = regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
+	commentRegexp    = regexp.MustCompile(`^\s*//(.+)`)
+)
+
+func parseImportDecl(line string) (importLine, error) {
+	matches := importDeclRegexp.FindStringSubmatch(line)
+	if len(matches) == 0 {
+		return importLine{}, errors.New("unrecognized import line")
+	}
+
+	return importLine{
+		importDecl: importDecl{
+			alias: matches[2],
+			pckg:  matches[3],
+		},
 	}, nil
 }
 
-func (id importDecl) String() string {
-	buf := bytes.Buffer{}
-	buf.WriteString("\t")
-	if id.alias != "" {
-		buf.WriteString(id.alias)
-		buf.WriteString(" ")
+func parseComment(line string) (importLine, error) {
+	matches := commentRegexp.FindStringSubmatch(line)
+	if len(matches) == 0 {
+		return importLine{}, errors.New("unrecognized import line")
 	}
-	buf.WriteString("\"")
-	buf.WriteString(id.pckg)
-	buf.WriteString("\"")
-	
-	return buf.String()
+
+	return importLine{
+		comment: comment(matches[1]),
+	}, nil
 }
 
-type sortableImports []importDecl
+func (il importLine) String() string {
+	if !il.importDecl.empty() {
+		buf := bytes.Buffer{}
+		buf.WriteString("\t")
+		if il.importDecl.alias != "" {
+			buf.WriteString(il.importDecl.alias)
+			buf.WriteString(" ")
+		}
+		buf.WriteString("\"")
+		buf.WriteString(il.importDecl.pckg)
+		buf.WriteString("\"")
+
+		return buf.String()
+	} else {
+		return fmt.Sprintf("\t//%s", il.comment)
+	}
+}
+
+type sortableImports []importLine
 
 func (imps sortableImports) Len() int {
 	return len(imps)
 }
 
 func (imps sortableImports) Less(i, j int) bool {
-	return imps[i].pckg < imps[j].pckg
+	return imps[i].importDecl.pckg < imps[j].importDecl.pckg
 }
 
 func (imps sortableImports) Swap(i, j int) {

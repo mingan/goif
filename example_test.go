@@ -11,10 +11,7 @@ import (
 	"github.com/andreyvit/diff"
 )
 
-// multiple import blocks
-// import alias
 // single line
-// white space
 // unclosed block
 // commented out blocks
 
@@ -159,6 +156,67 @@ import (
 func main() {
 	fmt.Println("Hello world")
 }
+`,
+		)
+	})
+
+	t.Run("no empty lines", func(t *testing.T) {
+		testFormatter(
+			t,
+			`package main
+import (
+	"log"
+	"fmt"
+)`,
+			`package main
+import (
+	"fmt"
+	"log"
+)
+`,
+		)
+	})
+
+	t.Run("lone import is ignored", func(t *testing.T) {
+		testFormatter(
+			t,
+			`
+package main
+
+import "log"
+`,
+			`
+package main
+
+import "log"
+`,
+		)
+	})
+
+	t.Run("harmless comments in the middle are grouped", func(t *testing.T) {
+		testFormatter(
+			t,
+			`
+package main
+
+import (
+// comment 1
+	"log"
+	// comment 2
+	"fmt"
+	// comment 3
+)
+`,
+			`
+package main
+
+import (
+	// comment 1
+	// comment 2
+	// comment 3
+	"fmt"
+	"log"
+)
 `,
 		)
 	})
