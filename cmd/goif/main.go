@@ -1,9 +1,13 @@
-package goif
+package main
+
+import (
+	"github.com/spf13/afero"
+	"github.com/adammck/venv"
+	"os"
+	"github.com/mingan/goif"
+)
 
 func main() {
 	// get prefix from an env var or from an arg
-	// given glob path
-	// traverse all go files
-	// process each one of them, in parallel?
-	// print errors to stderr
+	goif.NewApp(afero.NewOsFs(), os.Stderr).Run(venv.OS())
 }
