@@ -8,6 +8,11 @@ import (
 	"io/ioutil"
 )
 
+const (
+	// EnvPrefix is the name of the ENV variable containing the grouped prefix
+	EnvPrefix = "GOIF_PREFIX"
+)
+
 type App struct {
 	fs  afero.Fs
 	err io.Writer
@@ -20,15 +25,17 @@ func NewApp(fs afero.Fs, err io.Writer) *App {
 	}
 }
 
-func (app *App) Run(env venv.Env) {
+func (app *App) Run(prefix string, env venv.Env) {
+	if prefix == "" {
+		prefix = env.Getenv(EnvPrefix)
+	}
+	
 	// given glob path
 	paths, err := afero.Glob(app.fs, "*.go")
 	if err != nil {
 		fmt.Fprint(app.err, err)
 		return
 	}
-
-	prefix := "todo"
 
 	// traverse all go files
 	// process each one of them, in parallel?

@@ -92,7 +92,7 @@ func groupAndSort(orgPrefix string, imports []importLine) [][]importLine {
 	var stdlib, org, others []importLine
 
 	for _, imp := range imports {
-		if strings.Contains(imp.importDecl.pckg, orgPrefix) {
+		if orgPrefix != "" && strings.Contains(imp.importDecl.pckg, orgPrefix) {
 			org = append(org, imp)
 		} else if strings.Contains(imp.importDecl.pckg, ".") {
 			others = append(others, imp)
