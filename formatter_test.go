@@ -294,6 +294,7 @@ func main() {
 		//		fmt.Println(strings.TrimRight(line, "\n"), p)
 	}
 }
+
 func testFormatter(t *testing.T, input, expected string) {
 	t.Parallel()
 
