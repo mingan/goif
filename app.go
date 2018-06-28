@@ -57,6 +57,9 @@ func (app *App) traverse(dirname string) {
 			app.traverse(path + "/")
 			continue
 		}
+		if !strings.HasSuffix(path, ".go") {
+			continue
+		}
 		if err := app.formatFile(path); err != nil {
 			app.error(file, err)
 		}

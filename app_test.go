@@ -74,7 +74,7 @@ func TestApp_Run(t *testing.T) {
 		expectContentToMatchString(fs, singleFilePath, singleFileOriginal, t)
 	})
 
-	t.Run("nested structure, all non-excluded files are formatted", func(t *testing.T) {
+	t.Run("nested structure, all non-excluded Go files are formatted", func(t *testing.T) {
 		t.Parallel()
 
 		fs := prepareNestedTestFiles()
@@ -82,6 +82,7 @@ func TestApp_Run(t *testing.T) {
 		NewApp(fs, &stderr).Run("acme.com", "vendor", venv.Mock())
 
 		expectContentToMatchString(fs, singleFilePath, singleFileAcme, t)
+		expectContentToMatchString(fs, nonGoFilePath, nonGoFileOriginal, t)
 		expectContentToMatchString(fs, childFilePath, childFileAcme, t)
 		expectContentToMatchString(fs, grandchildFilePath, grandchildFileAcme, t)
 		expectContentToMatchString(fs, vendoredFilePath, vendoredFileOriginal, t)
@@ -147,6 +148,7 @@ func writeTestFile(fs afero.Fs, path, content string) {
 func prepareNestedTestFiles() afero.Fs {
 	fs := prepareSingleTestFile()
 	writeTestFile(fs, childFilePath, childFileOriginal)
+	writeTestFile(fs, nonGoFilePath, nonGoFileOriginal)
 	writeTestFile(fs, grandchildFilePath, grandchildFileOriginal)
 	writeTestFile(fs, vendoredFilePath, vendoredFileOriginal)
 	return fs
@@ -253,6 +255,16 @@ import (
 	vendoredFilePath = "vendor/file.go"
 
 	vendoredFileOriginal = `
+package main
+
+import (
+	"github.com/some/package"
+	"time"
+)
+`
+	nonGoFilePath = "file.go.not"
+
+	nonGoFileOriginal = `
 package main
 
 import (
