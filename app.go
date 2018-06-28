@@ -18,6 +18,9 @@ const (
 type App struct {
 	fs  afero.Fs
 	err io.Writer
+
+	prefix        string
+	excludedPaths []string
 }
 
 func NewApp(fs afero.Fs, err io.Writer) *App {
@@ -31,11 +34,13 @@ func (app *App) Run(prefix, exclude string, env venv.Env) {
 	if prefix == "" {
 		prefix = env.Getenv(EnvPrefix)
 	}
+	app.prefix = prefix
+	app.excludedPaths = strings.Split(exclude, ",")
 
-	app.traverse(prefix, "", strings.Split(exclude, ","))
+	app.traverse("./")
 }
 
-func (app *App) traverse(prefix, dirname string, excludedPaths []string) {
+func (app *App) traverse(dirname string) {
 	files, err := afero.ReadDir(app.fs, dirname)
 	if err != nil {
 		app.error("reading directory", err)
@@ -44,21 +49,22 @@ func (app *App) traverse(prefix, dirname string, excludedPaths []string) {
 
 	for _, file := range files {
 		path := dirname + file.Name()
-		if isExcluded(path, excludedPaths) {
+		if app.isExcluded(path) {
 			continue
 		}
 		if file.IsDir() {
-			app.traverse(prefix, path+"/", excludedPaths)
+			app.traverse(path + "/")
 			continue
 		}
-		if err := app.formatFile(prefix, path); err != nil {
+		if err := app.formatFile(path); err != nil {
 			app.error(file, err)
 		}
 	}
 }
 
-func isExcluded(path string, excludedPaths []string) bool {
-	for _, e := range excludedPaths {
+func (app *App) isExcluded(path string) bool {
+	path = strings.TrimPrefix(path, "./")
+	for _, e := range app.excludedPaths {
 		if e == path {
 			return true
 		}
@@ -67,7 +73,7 @@ func isExcluded(path string, excludedPaths []string) bool {
 	return false
 }
 
-func (app *App) formatFile(prefix, path string) error {
+func (app *App) formatFile(path string) error {
 	file, err := app.fs.Open(path)
 	if err != nil {
 		return err
@@ -81,7 +87,7 @@ func (app *App) formatFile(prefix, path string) error {
 	}
 	defer temp.Close()
 
-	formatter := NewFormatter(prefix)
+	formatter := NewFormatter(app.prefix)
 	// format file to temp file
 	if err := formatter.Format(file, temp); err != nil {
 		// if an error occurs, scrap the temp file, return error

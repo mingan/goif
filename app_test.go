@@ -78,11 +78,12 @@ func TestApp_Run(t *testing.T) {
 
 		fs := prepareNestedTestFiles()
 		stderr := bytes.Buffer{}
-		NewApp(fs, &stderr).Run("acme.com", "", venv.Mock())
+		NewApp(fs, &stderr).Run("acme.com", "vendor", venv.Mock())
 
 		expectContentToMatchString(fs, singleFilePath, singleFileAcme, t)
 		expectContentToMatchString(fs, childFilePath, childFileAcme, t)
 		expectContentToMatchString(fs, grandchildFilePath, grandchildFileAcme, t)
+		expectContentToMatchString(fs, vendoredFilePath, vendoredFileOriginal, t)
 	})
 }
 
@@ -146,6 +147,7 @@ func prepareNestedTestFiles() afero.Fs {
 	fs := prepareSingleTestFile()
 	writeTestFile(fs, childFilePath, childFileOriginal)
 	writeTestFile(fs, grandchildFilePath, grandchildFileOriginal)
+	writeTestFile(fs, vendoredFilePath, vendoredFileOriginal)
 	return fs
 }
 
@@ -244,6 +246,17 @@ import (
 
 	"github.com/foreign/package"
 	"party.com/important/package"
+)
+`
+
+	vendoredFilePath = "vendor/file.go"
+
+	vendoredFileOriginal = `
+package main
+
+import (
+	"github.com/some/package"
+	"time"
 )
 `
 )
