@@ -25,11 +25,11 @@ func NewFormatter(orgGroupPrefix string) *formatter {
 
 func (f *formatter) Format(r io.Reader, w io.Writer) error {
 	reader := bufio.NewReader(r)
-	for {
+	for i := 1; ; i++ {
 		line, err := reader.ReadString('\n')
 		if err == nil || err == io.EOF {
 			if err := f.line(line, w); err != nil {
-				return err
+				return fmt.Errorf("%d %v", i, err)
 			}
 			if err == io.EOF {
 				break
@@ -59,7 +59,7 @@ func (f *formatter) line(line string, w io.Writer) error {
 	default:
 		w.Write([]byte(line))
 	}
-	
+
 	return nil
 }
 
@@ -149,8 +149,8 @@ func parseImportLine(line string) (importLine, error) {
 }
 
 var (
-	importDeclRegexp = regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
-	commentRegexp    = regexp.MustCompile(`^\s*//(.+)`)
+	importDeclRegexp  = regexp.MustCompile(`^\s*((\w+)\s+)?"(\S+)"`)
+	commentRegexp     = regexp.MustCompile(`^\s*//(.+)`)
 	openingLineRegexp = regexp.MustCompile(`^\s*import \(`)
 	closingLineRegexp = regexp.MustCompile(`^\s*\)`)
 )
