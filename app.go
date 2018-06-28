@@ -61,7 +61,7 @@ func (app *App) traverse(dirname string) {
 			continue
 		}
 		if err := app.formatFile(path); err != nil {
-			app.error(file, err)
+			app.error(path, err)
 		}
 	}
 }

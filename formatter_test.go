@@ -1,7 +1,6 @@
 package goif
 
 import (
-	"fmt"
 	"testing"
 	"os"
 	"log"
@@ -286,12 +285,9 @@ func main() {
 		if err == nil || err == io.EOF {
 			p.line(line, target)
 			if err == io.EOF {
-				fmt.Println("done reading", line)
 				break
 			}
 		}
-
-		//		fmt.Println(strings.TrimRight(line, "\n"), p)
 	}
 }
 
