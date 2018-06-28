@@ -6,6 +6,8 @@ import (
 	"io"
 	"fmt"
 	"io/ioutil"
+	"strings"
+	"os"
 )
 
 const (
@@ -25,26 +27,44 @@ func NewApp(fs afero.Fs, err io.Writer) *App {
 	}
 }
 
-func (app *App) Run(prefix string, env venv.Env) {
+func (app *App) Run(prefix, exclude string, env venv.Env) {
 	if prefix == "" {
 		prefix = env.Getenv(EnvPrefix)
 	}
-	
-	// given glob path
-	paths, err := afero.Glob(app.fs, "*.go")
+
+	app.traverse(prefix, "", strings.Split(exclude, ","))
+}
+
+func (app *App) traverse(prefix, dirname string, excludedPaths []string) {
+	files, err := afero.ReadDir(app.fs, dirname)
 	if err != nil {
-		fmt.Fprint(app.err, err)
+		app.error("reading directory", err)
 		return
 	}
 
-	// traverse all go files
-	// process each one of them, in parallel?
-	for _, path := range paths {
+	for _, file := range files {
+		path := dirname + file.Name()
+		if isExcluded(path, excludedPaths) {
+			continue
+		}
+		if file.IsDir() {
+			app.traverse(prefix, path+"/", excludedPaths)
+			continue
+		}
 		if err := app.formatFile(prefix, path); err != nil {
-			// print errors to stderr
-			fmt.Fprint(app.err, err)
+			app.error(file, err)
 		}
 	}
+}
+
+func isExcluded(path string, excludedPaths []string) bool {
+	for _, e := range excludedPaths {
+		if e == path {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (app *App) formatFile(prefix, path string) error {
@@ -54,7 +74,8 @@ func (app *App) formatFile(prefix, path string) error {
 	}
 	defer file.Close()
 
-	temp, err := ioutil.TempFile("", path)
+	safePath := strings.Replace(path, string(os.PathSeparator), "_", -1)
+	temp, err := ioutil.TempFile("", safePath)
 	if err != nil {
 		return err
 	}
@@ -90,4 +111,8 @@ func (app *App) formatFile(prefix, path string) error {
 	}
 
 	return nil
+}
+
+func (app *App) error(args ... interface{}) {
+	fmt.Fprintln(app.err, args...)
 }
