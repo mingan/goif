@@ -1,16 +1,17 @@
 package goif
 
 import (
-	"testing"
-	"github.com/spf13/afero"
-	"github.com/adammck/venv"
 	"bytes"
-	"github.com/andreyvit/diff"
 	"fmt"
-	"runtime/debug"
-	"strings"
 	"os"
 	"regexp"
+	"runtime/debug"
+	"strings"
+	"testing"
+
+	"github.com/adammck/venv"
+	"github.com/andreyvit/diff"
+	"github.com/spf13/afero"
 )
 
 func TestApp_Run(t *testing.T) {

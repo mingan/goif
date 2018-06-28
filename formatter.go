@@ -1,14 +1,14 @@
 package goif
 
 import (
-	"sort"
-	"io"
-	"strings"
 	"bufio"
-	"regexp"
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"regexp"
+	"sort"
+	"strings"
 )
 
 type formatter struct {

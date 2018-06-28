@@ -1,13 +1,14 @@
 package goif
 
 import (
-	"github.com/spf13/afero"
-	"github.com/adammck/venv"
-	"io"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"strings"
 	"os"
+	"strings"
+
+	"github.com/adammck/venv"
+	"github.com/spf13/afero"
 )
 
 const (

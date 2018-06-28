@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/spf13/afero"
-	"github.com/adammck/venv"
-	"os"
-	"github.com/mingan/goif"
 	"flag"
+	"os"
+
+	"github.com/adammck/venv"
+	"github.com/mingan/goif"
+	"github.com/spf13/afero"
 )
 
 var (
