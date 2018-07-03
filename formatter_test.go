@@ -237,6 +237,30 @@ import (
 		)
 	})
 
+	t.Run("file comment", func(t *testing.T) {
+		testFormatter(
+			t,
+			`// +build linux
+
+package main
+
+import (
+	"log"
+	"fmt"
+)
+`,
+			`// +build linux
+
+package main
+
+import (
+	"fmt"
+	"log"
+)
+`,
+		)
+	})
+
 	t.Run("unclosed import block", func(t *testing.T) {
 
 		t.Parallel()
