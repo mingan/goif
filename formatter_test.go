@@ -13,7 +13,7 @@ import (
 
 func TestFormatter(t *testing.T) {
 	t.Run("empty input", func(t *testing.T) {
-		testFormatter(t, "", "")
+		testFormatter(t, "", "", "")
 	})
 
 	t.Run("simple case with all groups", func(t *testing.T) {
@@ -36,6 +36,7 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
+			"enectiva.cz",
 			`
 package main
 
@@ -46,6 +47,47 @@ import (
 	"enectiva.cz/prefab/api"
 	"enectiva.cz/prefab/log"
 
+	"github.com/pressly/sup"
+)
+
+func main() {
+	fmt.Println("Hello world")
+}
+`,
+		)
+	})
+
+	t.Run("simple case with all and github prefix", func(t *testing.T) {
+		testFormatter(
+			t,
+			`
+package main
+
+import (
+	"github.com/pressly/sup"
+	"github.com/some/package"
+
+	"github.com/different/library"
+
+	"fmt"
+	"github.com/some/otherpackage"
+)
+
+func main() {
+	fmt.Println("Hello world")
+}
+`,
+			"github.com/some",
+			`
+package main
+
+import (
+	"fmt"
+
+	"github.com/some/otherpackage"
+	"github.com/some/package"
+
+	"github.com/different/library"
 	"github.com/pressly/sup"
 )
 
@@ -71,6 +113,7 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
+			"enectiva.cz",
 			`
 package main
 
@@ -101,6 +144,7 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
+			"enectiva.cz",
 			`
 package main
 
@@ -136,6 +180,7 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
+			"enectiva.cz",
 			`
 package main
 
@@ -164,6 +209,7 @@ import (
 	"log"
 	"fmt"
 )`,
+			"enectiva.cz",
 			`package main
 import (
 	"fmt"
@@ -181,6 +227,7 @@ package main
 
 import "log"
 `,
+			"enectiva.cz",
 			`
 package main
 
@@ -203,6 +250,7 @@ import (
 	// comment 3
 )
 `,
+			"enectiva.cz",
 			`
 package main
 
@@ -227,6 +275,7 @@ import (
 //	"fmt"
 // )
 `,
+			"enectiva.cz",
 			`package main
 
 // import (
@@ -249,6 +298,7 @@ import (
 	"fmt"
 )
 `,
+			"enectiva.cz",
 			`// +build linux
 
 package main
@@ -316,10 +366,10 @@ func main() {
 	}
 }
 
-func testFormatter(t *testing.T, input, expected string) {
+func testFormatter(t *testing.T, input, prefix, expected string) {
 	t.Parallel()
 
-	formatter := NewFormatter("enectiva.cz")
+	formatter := NewFormatter(prefix)
 
 	var output bytes.Buffer
 	formatter.Format(bytes.NewBufferString(input), &output)
