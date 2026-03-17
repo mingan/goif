@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/adammck/venv"
 	"github.com/mingan/goif"
 	"github.com/spf13/afero"
 )
@@ -30,9 +29,9 @@ func main() {
 		printHelp()
 		return
 	}
-	
+
 	goif.NewApp(afero.NewOsFs(), os.Stderr).
-		Run(prefix, exclude, venv.OS())
+		Run(prefix, exclude)
 }
 
 func printHelp() {

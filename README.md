@@ -36,7 +36,13 @@ import (
 
 ## Installation
 
-`go get -u github.com/mingan/goif/cmd/goif`
+Library:
+
+`go get github.com/mingan/goif@latest`
+
+CLI:
+
+`go install github.com/mingan/goif/cmd/goif@latest`
 
 ## Usage
 

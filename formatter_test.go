@@ -1,14 +1,12 @@
 package goif
 
 import (
-	"testing"
-	"os"
-	"log"
 	"bufio"
-	"io"
 	"bytes"
-	
-	"github.com/andreyvit/diff"
+	"io"
+	"log"
+	"os"
+	"testing"
 )
 
 func TestFormatter(t *testing.T) {
@@ -375,6 +373,6 @@ func testFormatter(t *testing.T, input, prefix, expected string) {
 	formatter.Format(bytes.NewBufferString(input), &output)
 
 	if output.String() != expected {
-		t.Error(diff.LineDiff(expected, output.String()))
+		t.Errorf("formatted output mismatch\nexpected:\n%s\nactual:\n%s", expected, output.String())
 	}
 }

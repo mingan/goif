@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/adammck/venv"
 	"github.com/spf13/afero"
 )
 
@@ -31,9 +30,9 @@ func NewApp(fs afero.Fs, err io.Writer) *App {
 	}
 }
 
-func (app *App) Run(prefix, exclude string, env venv.Env) {
+func (app *App) Run(prefix, exclude string) {
 	if prefix == "" {
-		prefix = env.Getenv(EnvPrefix)
+		prefix = os.Getenv(EnvPrefix)
 	}
 	app.prefix = prefix
 	app.excludedPaths = strings.Split(exclude, ",")
@@ -123,6 +122,6 @@ func (app *App) formatFile(path string) error {
 	return nil
 }
 
-func (app *App) error(args ... interface{}) {
+func (app *App) error(args ...interface{}) {
 	fmt.Fprintln(app.err, args...)
 }

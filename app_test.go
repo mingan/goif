@@ -9,77 +9,61 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adammck/venv"
-	"github.com/andreyvit/diff"
 	"github.com/spf13/afero"
 )
 
 func TestApp_Run(t *testing.T) {
 
 	t.Run("single file, without flag, without ENV, doesn't change the content", func(t *testing.T) {
-		t.Parallel()
-
 		fs := prepareSingleTestFile()
 		stderr := bytes.Buffer{}
-		NewApp(fs, &stderr).Run("", "", venv.Mock())
+		t.Setenv(EnvPrefix, "")
+		NewApp(fs, &stderr).Run("", "")
 
 		expectContentToMatchString(fs, singleFilePath, singleFileNoPrefix, t)
 	})
 
 	t.Run("single file, with flag, without ENV", func(t *testing.T) {
-		t.Parallel()
-
 		fs := prepareSingleTestFile()
 		stderr := bytes.Buffer{}
-		NewApp(fs, &stderr).Run("acme.com", "", venv.Mock())
+		NewApp(fs, &stderr).Run("acme.com", "")
 
 		expectContentToMatchString(fs, singleFilePath, singleFileAcme, t)
 	})
 
 	t.Run("single file, without flag, with ENV", func(t *testing.T) {
-		t.Parallel()
-
 		fs := prepareSingleTestFile()
 		stderr := bytes.Buffer{}
-		env := venv.Mock()
-		env.Setenv("GOIF_PREFIX", "acme.com")
-		NewApp(fs, &stderr).Run("", "", env)
+		t.Setenv(EnvPrefix, "acme.com")
+		NewApp(fs, &stderr).Run("", "")
 
 		expectContentToMatchString(fs, singleFilePath, singleFileAcme, t)
 	})
 
 	t.Run("single file, with flag and with ENV, flag takes precedence", func(t *testing.T) {
-		t.Parallel()
-
 		fs := prepareSingleTestFile()
 		stderr := bytes.Buffer{}
-		env := venv.Mock()
-		env.Setenv("GOIF_PREFIX", "foobar.com")
-		NewApp(fs, &stderr).Run("acme.com", "", env)
+		t.Setenv(EnvPrefix, "foobar.com")
+		NewApp(fs, &stderr).Run("acme.com", "")
 
 		expectContentToMatchString(fs, singleFilePath, singleFileAcme, t)
 	})
 
 	t.Run("different file, the tested file is not touched", func(t *testing.T) {
-		t.Parallel()
-
 		fs := prepareSingleTestFile()
 		stderr := bytes.Buffer{}
 		NewApp(fs, &stderr).Run(
 			"acme.com",
 			fmt.Sprintf("%v,other_file.go", singleFilePath),
-			venv.Mock(),
 		)
 
 		expectContentToMatchString(fs, singleFilePath, singleFileOriginal, t)
 	})
 
 	t.Run("nested structure, all non-excluded Go files are formatted", func(t *testing.T) {
-		t.Parallel()
-
 		fs := prepareNestedTestFiles()
 		stderr := bytes.Buffer{}
-		NewApp(fs, &stderr).Run("acme.com", "vendor", venv.Mock())
+		NewApp(fs, &stderr).Run("acme.com", "vendor")
 
 		expectContentToMatchString(fs, singleFilePath, singleFileAcme, t)
 		expectContentToMatchString(fs, nonGoFilePath, nonGoFileOriginal, t)
@@ -96,7 +80,7 @@ func expectContentToMatchString(fs afero.Fs, path, expected string, t *testing.T
 	}
 
 	if content != expected {
-		t.Error(originalCaller(1), diff.LineDiff(expected, content), path)
+		t.Errorf("%s content mismatch for %s\nexpected:\n%s\nactual:\n%s", originalCaller(1), path, expected, content)
 	}
 }
 
